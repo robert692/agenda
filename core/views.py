@@ -39,7 +39,11 @@ def lista_eventos(requests):
 
 @login_required(login_url='/login/')
 def evento(requests):
-    return render(requests, 'evento.html')
+    id_evento = requests.GET.get('id')
+    dados = {}
+    if id_evento:
+        dados['evento'] = Evento.objects.get(id=id_evento)
+    return render(requests, 'evento.html', dados)
 
 
 @login_required(login_url='/login/')
@@ -48,9 +52,34 @@ def submit_evento(requests):
         titulo = requests.POST.get('titulo')
         data_evento = requests.POST.get('data_evento')
         descricao = requests.POST.get('descricao')
+        local_evento = requests.POST.get('local_evento')
         usuario = requests.user
-        Evento.objects.create(titulo=titulo,
-                              data_evento=data_evento,
-                              descricao=descricao,
-                              usuario=usuario)
+        id_evento = requests.POST.get('id_evento')
+        if id_evento:
+            evento = Evento.objects.get(id=id_evento)
+            if evento.usuario == usuario:
+                evento.titulo = titulo
+                evento.data_evento = data_evento
+                evento.descricao = descricao
+                evento.local_evento = local_evento
+                evento.save()
+            # Evento.objects.filter(id=id_evento).update(titulo=titulo,
+            #                                            data_evento=data_evento,
+            #                                            descricao=descricao,
+            #                                            local_evento=local_evento)
+        else:
+            Evento.objects.create(titulo=titulo,
+                                  data_evento=data_evento,
+                                  descricao=descricao,
+                                  local_evento=local_evento,
+                                  usuario=usuario)
+    return redirect('/')
+
+
+@login_required(login_url='/login/')
+def delete_evento(requests, id_evento):
+    usuario = requests.user
+    evento = Evento.objects.get(id=id_evento)
+    if usuario == evento.usuario:
+        evento.delete()
     return redirect('/')
